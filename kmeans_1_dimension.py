@@ -3,7 +3,7 @@ import math
 import copy
 
 """
-kmeans for integer data objects in 1-dimensional space
+kmeans for integer data objects (1-dimension)
 """
 
 class Cluster:
@@ -89,14 +89,4 @@ def kmeans(k, data_objects):
 
         update_centroids(clusters)
 
-        for i, cluster in enumerate(clusters):
-            print "interim", i, cluster.data_objects
-
-    for i, cluster in enumerate(clusters):
-        print "final", i, cluster.data_objects
-
-
-data_objects = [8, 1, 3, 2, 7, 6, 8, 9, 90, 90, 45, 43, 42, 200, 250,
-        20, 8, 9, 800, 80, 550, 678]
-
-kmeans(4, data_objects)
+    return clusters
