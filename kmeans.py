@@ -1,85 +1,128 @@
-import csv
-import matplotlib.pyplot as plt
 import random
 import math
-import pandas
+import copy
+import pandas as pd
 from pandas import DataFrame
+import numpy as np
 
-aus_open = pandas.read_csv('data/AusOpen-men-2013.csv')
+"""
+kmeans for n-dimensional data objects of integers and floats.
+"""
 
-aus_open = aus_open.dropna()
-
-print aus_open
-
-joined_data = DataFrame()
-
-plt.plot(aus_open['ACE.1'], aus_open['ACE.2'], 'o')
-plt.xlabel('Aces player 1')
-plt.ylabel('Aces player 2')
-
-plt.show()
-
-k = 3
-
-cluster_centers = []
-
-# Create the cluster centers
-for i in range(k):
-    cluster_center = ClusterCenter((random.randint(min(aces), max(aces)), random.randint(min(double_faults), max(double_faults))))
-    cluster_centers.append(cluster_center)
-
-# Plot the cluster start positions
-for cluster_center in cluster_centers:
-    plt.plot(cluster_center.x, cluster_center.y, 'bx')
-
-# Assign each data point to a cluster
-cluster_assignments = []
-
-for i in range(len(aces)):
-    distances = []
-
-    # Get the data point's distance from each cluster center
-    for cluster_center in cluster_centers:
-        distance = math.sqrt((cluster_center.x - aces[i]) ** 2 + (cluster_center.y - double_faults[i]) ** 2)
-
-        distances.append(distance)
-
-    cluster_assignments.append(distances.index(min(distances)))
-
-# Work out the new positions of each cluster
-updated_k_positions = []
-
-class ClusterCenter:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+class Cluster:
+    def __init__(self, centroid):
+        self.centroid = centroid
+        self.data_objects = []
 
 
-class DataPoint:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+    def __eq__(self, other_cluster):
+        return self.centroid == other_cluster.centroid
 
 
-    def set_cluster_center(self, cluster_center):
-        self.cluster_center = cluster_center
+    def assign_data_object(self, data_object):
+        self.data_objects.append(data_object)
 
-for i in range(k):
-    x_distances = []
-    y_distances = []
-    count = 0
 
-    for j in range(len(cluster_assignments)):
-        if cluster_assignments[j] == i:
-            x_distances.append(aces[j])
-            y_distances.append(double_faults[j])
-            count += 1
+    def unassign_data_objects(self):
+        self.data_objects = []
 
-    if count > 0:
-        updated_k_positions.append(((sum(x_distances) / count), (sum(y_distances) / count)))
 
-# Plot the cluster updated positions
-for updated_position in updated_k_positions:
-    plt.plot(updated_position[0], updated_position[1], 'gx')
+    def update_centroid(self):
+        try:
+            self.centroid = sum(self.data_objects) / len(self.data_objects)
+        except:
+            # When no data objects have been assigned, don't update the
+            # centroid
+            pass
 
-plt.show()
+
+    def distance_to(self, data_object):
+        return np.sqrt(np.sum(np.square(np.subtract(self.centroid, data_object))))
+
+
+def assign_data_objects_to_clusters(clusters, data_objects):
+    if len(clusters) < 1:
+        raise Error("No cluster objects")
+
+    if len(data_objects) < 1:
+        raise Error("No data objects")
+
+    # Assign each data object to a cluster
+    for index, data_object in data_objects.iterrows():
+        closest_cluster = clusters[0]
+
+        for i, cluster in enumerate(clusters):
+            # Work out the distance of the data object from the cluster centroid
+            if cluster.distance_to(data_object) < closest_cluster.distance_to(data_object):
+                closest_cluster = cluster
+
+        closest_cluster.assign_data_object(data_object)
+
+
+def update_centroids(clusters):
+    for cluster in clusters:
+        cluster.update_centroid()
+
+
+def are_cluster_lists_identical(cluster_list_1, cluster_list_2):
+    identical = True
+
+    # If the lists aren't the same length, they can't be identical
+    if len(cluster_list_1) != len(cluster_list_2):
+        return False
+
+    # Compare the centroids of the clusters in each list
+    for i in range(len(cluster_list_1)):
+        values_equal = cluster_list_1[i].centroid.eq(cluster_list_2[i].centroid)
+
+        if not values_equal.all():
+            identical = False
+            break
+
+    return identical
+
+
+def kmeans(k, data_objects):
+    clusters = []
+
+    min_values = data_objects.min(axis=0)
+    max_values = data_objects.max(axis=0)
+
+    # Give each cluster a random centroid
+    for _ in range(k):
+        values = []
+
+        # Get a random value for each cell
+        for i in range(len(data_objects.columns)):
+            value = random.uniform(min_values[i], max_values[i])
+            values.append(value)
+
+        clusters.append(Cluster(pd.Series(values)))
+
+    # Perform initial assignments
+    assign_data_objects_to_clusters(clusters, data_objects)
+
+    previous_clusters = copy.deepcopy(clusters)
+
+    update_centroids(clusters)
+
+    # And minimise...
+    while not are_cluster_lists_identical(clusters, previous_clusters):
+        # Now that the centroids have changed, all data objects should be
+        # unassigned
+        for cluster in clusters:
+            cluster.unassign_data_objects()
+
+        assign_data_objects_to_clusters(clusters, data_objects)
+
+        # Update previous clusters
+        previous_clusters = copy.deepcopy(clusters)
+
+        update_centroids(clusters)
+
+    return clusters
+
+# Our data objects are rows in a DataFrame
+data_objects = pd.read_csv("data/seeds.txt", delim_whitespace=True)
+
+clusters = kmeans(3, data_objects)
