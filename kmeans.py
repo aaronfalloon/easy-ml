@@ -29,7 +29,10 @@ class Cluster:
 
     def update_centroid(self):
         try:
-            self.centroid = sum(self.data_objects) / len(self.data_objects)
+            # Convert to DataFrame for easier calculations
+            data_objects = pd.DataFrame(self.data_objects)
+
+            self.centroid = data_objects.mean(0)
         except:
             # When no data objects have been assigned, don't update the
             # centroid
@@ -121,8 +124,3 @@ def kmeans(k, data_objects):
         update_centroids(clusters)
 
     return clusters
-
-# Our data objects are rows in a DataFrame
-data_objects = pd.read_csv("data/seeds.txt", delim_whitespace=True)
-
-clusters = kmeans(3, data_objects)
