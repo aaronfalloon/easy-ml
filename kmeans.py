@@ -45,7 +45,7 @@ class Cluster:
 
 def assign_data_objects_to_clusters(clusters, data_objects):
     if len(clusters) < 1:
-        raise Error("No cluster objects")
+        raise Error("No Cluster objects")
 
     if len(data_objects) < 1:
         raise Error("No data objects")
