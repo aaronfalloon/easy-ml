@@ -3,7 +3,7 @@ import math
 import copy
 import pandas as pd
 from pandas import DataFrame
-import numpy as np
+import distance_measures
 
 """
 kmeans for n-dimensional data objects of integers and floats.
@@ -40,7 +40,7 @@ class Cluster:
 
 
     def distance_to(self, data_object):
-        return np.sqrt(np.sum(np.square(np.subtract(self.centroid, data_object))))
+        return distance_measures.euclidean(self.centroid, data_object)
 
 
 def assign_data_objects_to_clusters(clusters, data_objects):
