@@ -10,4 +10,4 @@ clusters = kmeans.kmeans(3, data_objects.ix[:, 0:7])
 for i, cluster in enumerate(clusters):
     print "Cluster", i, len(cluster.data_objects)
 
-cluster_evaluation.silhouette(clusters)
+print "Silhouette score", cluster_evaluation.silhouette_score(clusters)
